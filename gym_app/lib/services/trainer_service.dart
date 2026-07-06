@@ -21,12 +21,12 @@ class TrainerService {
   }
 
   Future<Trainer> create(Trainer trainer) async {
-    final response = await _dio.post(ApiConstants.trainers, data: trainer.toJson());
+    final response = await _dio.post(ApiConstants.trainers, data: trainer.toCreateJson());
     return Trainer.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<Trainer> update(int id, Trainer trainer) async {
-    final response = await _dio.put(ApiConstants.trainerDetail(id), data: trainer.toJson());
+    final response = await _dio.put(ApiConstants.trainerDetail(id), data: trainer.toUpdateJson());
     return Trainer.fromJson(response.data as Map<String, dynamic>);
   }
 

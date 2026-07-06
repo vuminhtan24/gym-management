@@ -5,6 +5,7 @@ import '../../core/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/trainer_provider.dart';
 import '../../models/trainer.dart';
+import '../../widgets/trainer_card.dart';
 import 'trainer_form_screen.dart';
 
 class TrainersListScreen extends StatefulWidget {
@@ -29,6 +30,35 @@ class _TrainersListScreenState extends State<TrainersListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _confirmDelete(BuildContext context, int id, String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận xoá'),
+        content: Text('Bạn có chắc muốn xoá huấn luyện viên "$name"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Huỷ')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xoá', style: TextStyle(color: AppTheme.danger)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      final provider = context.read<TrainerProvider>();
+      final success = await provider.deleteTrainer(id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success ? 'Đã xoá huấn luyện viên' : (provider.errorMessage ?? 'Lỗi')),
+            backgroundColor: success ? AppTheme.primaryLight : AppTheme.danger,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -121,110 +151,33 @@ class _TrainersListScreenState extends State<TrainersListScreen> {
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           final trainer = provider.trainers[index];
-          return _TrainerCard(
+          return TrainerCard(
             trainer: trainer,
-            canManage: canManage,
             onTap: () {
-              if (canManage) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => TrainerFormScreen(trainer: trainer)),
-                );
-              }
+              if (!canManage) return;
+              showModalBottomSheet(
+                context: context,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                ),
+                builder: (_) => _TrainerActions(
+                  trainer: trainer,
+                  onEdit: () {
+                    Navigator.pop(context);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => TrainerFormScreen(trainer: trainer)),
+                    );
+                  },
+                  onDelete: () {
+                    Navigator.pop(context);
+                    _confirmDelete(context, trainer.id, trainer.fullName);
+                  },
+                ),
+              );
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class _TrainerCard extends StatelessWidget {
-  final Trainer trainer;
-  final bool canManage;
-  final VoidCallback onTap;
-
-  const _TrainerCard({
-    required this.trainer,
-    required this.canManage,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
-                child: Text(
-                  trainer.fullName.isNotEmpty ? trainer.fullName[0].toUpperCase() : '?',
-                  style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            trainer.fullName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                          ),
-                        ),
-                        _StatusBadge(status: trainer.status),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'SĐT: ${trainer.phone} ${trainer.email != null ? "• ${trainer.email}" : ""}',
-                      style: const TextStyle(fontSize: 12.5, color: Colors.black54),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Chuyên môn: ${trainer.specialty ?? "Chưa cập nhật"} • KN: ${trainer.experienceYears} năm',
-                      style: const TextStyle(fontSize: 12.5, color: Colors.black54),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final isActive = status == 'active';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.green.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        isActive ? 'Hoạt động' : 'Tạm dừng',
-        style: TextStyle(
-          color: isActive ? Colors.green : Colors.grey[700],
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }
@@ -291,6 +244,38 @@ class _ErrorState extends StatelessWidget {
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             OutlinedButton(onPressed: onRetry, child: const Text('Thử lại')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrainerActions extends StatelessWidget {
+  final Trainer trainer;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _TrainerActions({required this.trainer, required this.onEdit, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Chỉnh sửa'),
+              onTap: onEdit,
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: AppTheme.danger),
+              title: const Text('Xoá', style: TextStyle(color: AppTheme.danger)),
+              onTap: onDelete,
+            ),
           ],
         ),
       ),

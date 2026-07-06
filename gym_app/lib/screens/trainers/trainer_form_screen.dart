@@ -5,6 +5,7 @@ import '../../core/app_theme.dart';
 import '../../models/trainer.dart';
 import '../../providers/trainer_provider.dart';
 
+/// Nếu [trainer] == null -> màn hình tạo mới. Ngược lại -> chỉnh sửa.
 class TrainerFormScreen extends StatefulWidget {
   final Trainer? trainer;
   const TrainerFormScreen({super.key, this.trainer});
@@ -24,6 +25,8 @@ class _TrainerFormScreenState extends State<TrainerFormScreen> {
   late String _status;
 
   bool _submitting = false;
+
+  bool get _isEdit => widget.trainer != null;
 
   @override
   void initState() {
@@ -69,7 +72,7 @@ class _TrainerFormScreenState extends State<TrainerFormScreen> {
     );
 
     bool success;
-    if (widget.trainer != null) {
+    if (_isEdit) {
       success = await provider.updateTrainer(widget.trainer!.id, trainer);
     } else {
       success = await provider.createTrainer(trainer);
@@ -80,13 +83,13 @@ class _TrainerFormScreenState extends State<TrainerFormScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.trainer != null
+            content: Text(_isEdit
                 ? 'Đã cập nhật huấn luyện viên thành công!'
                 : 'Đã thêm huấn luyện viên mới thành công!'),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -123,7 +126,7 @@ class _TrainerFormScreenState extends State<TrainerFormScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Đã xoá huấn luyện viên!'), backgroundColor: Colors.green),
           );
-          Navigator.of(context).pop();
+          Navigator.of(context).pop(true);
         } else {
           final err = context.read<TrainerProvider>().errorMessage;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -136,13 +139,11 @@ class _TrainerFormScreenState extends State<TrainerFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isEdit = widget.trainer != null;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? 'Sửa thông tin HLV' : 'Thêm HLV mới'),
+        title: Text(_isEdit ? 'Sửa thông tin HLV' : 'Thêm HLV mới'),
         actions: [
-          if (isEdit)
+          if (_isEdit)
             IconButton(
               icon: const Icon(Icons.delete_outline, color: AppTheme.danger),
               onPressed: _submitting ? null : _confirmDelete,
@@ -154,7 +155,7 @@ class _TrainerFormScreenState extends State<TrainerFormScreen> {
           : Form(
               key: _formKey,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
                   TextFormField(
                     controller: _nameController,
@@ -222,7 +223,7 @@ class _TrainerFormScreenState extends State<TrainerFormScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  if (isEdit) ...[
+                  if (_isEdit) ...[
                     const Text('Trạng thái hoạt động', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
@@ -246,7 +247,7 @@ class _TrainerFormScreenState extends State<TrainerFormScreen> {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: Text(isEdit ? 'CẬP NHẬT' : 'THÊM MỚI'),
+                    child: Text(_isEdit ? 'CẬP NHẬT' : 'THÊM MỚI'),
                   ),
                 ],
               ),

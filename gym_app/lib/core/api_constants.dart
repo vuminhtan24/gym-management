@@ -35,7 +35,6 @@ class ApiConstants {
   // Trainers
   static const String trainers = '/trainers';
   static String trainerDetail(int id) => '/trainers/$id';
-
   // PT Schedules
   static const String ptSchedules = '/pt-schedules';
   static String ptScheduleDetail(int id) => '/pt-schedules/$id';

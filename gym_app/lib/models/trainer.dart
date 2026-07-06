@@ -45,4 +45,21 @@ class Trainer {
       'status': status,
     };
   }
+
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'full_name': fullName,
+      'phone': phone,
+      'email': (email == null || email!.isEmpty) ? null : email,
+      'specialty': (specialty == null || specialty!.isEmpty) ? null : specialty,
+      'experience_years': experienceYears,
+      'salary': salary,
+    };
+  }
+
+  Map<String, dynamic> toUpdateJson() {
+    final json = toCreateJson();
+    json['status'] = status;
+    return json;
+  }
 }
