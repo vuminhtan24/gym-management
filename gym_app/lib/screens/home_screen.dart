@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../core/app_theme.dart';
 import '../providers/auth_provider.dart';
 import 'members/members_list_screen.dart';
-import 'packages/packages_list_screen.dart';
+import 'reports/dashboard_screen.dart';
+import 'schedules/schedules_dashboard_screen.dart';
+import 'manage_panel_screen.dart';
 import '../models/staff.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,24 +19,54 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
 
-  final _pages = const [
-    MembersListScreen(),
-    PackagesListScreen(),
-    _ProfileTab(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final isManageRole = auth.staff?.isAdminOrManager ?? false;
+
+    // Define pages and navigation destinations based on role
+    final List<Widget> pages;
+    final List<NavigationDestination> destinations;
+
+    if (isManageRole) {
+      pages = const [
+        DashboardScreen(),
+        MembersListScreen(),
+        SchedulesDashboardScreen(),
+        ManagePanelScreen(),
+        _ProfileTab(),
+      ];
+      destinations = const [
+        NavigationDestination(icon: Icon(Icons.analytics_outlined), selectedIcon: Icon(Icons.analytics), label: 'Thống kê'),
+        NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Thành viên'),
+        NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month), label: 'Lịch tập'),
+        NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Quản lý'),
+        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Tài khoản'),
+      ];
+    } else {
+      pages = const [
+        MembersListScreen(),
+        SchedulesDashboardScreen(),
+        _ProfileTab(),
+      ];
+      destinations = const [
+        NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Thành viên'),
+        NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month), label: 'Lịch tập'),
+        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Tài khoản'),
+      ];
+    }
+
+    // Reset index if it gets out of bounds (e.g. role changes)
+    if (_index >= pages.length) {
+      _index = 0;
+    }
+
     return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
+      body: IndexedStack(index: _index, children: pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Thành viên'),
-          NavigationDestination(icon: Icon(Icons.card_membership_outlined), selectedIcon: Icon(Icons.card_membership), label: 'Gói tập'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Tài khoản'),
-        ],
+        destinations: destinations,
       ),
     );
   }
