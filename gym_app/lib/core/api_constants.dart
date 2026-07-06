@@ -31,4 +31,8 @@ class ApiConstants {
   // Subscriptions
   static const String subscriptions = '/subscriptions';
   static String subscriptionDetail(int id) => '/subscriptions/$id';
+
+  // Trainers
+  static const String trainers = '/trainers';
+  static String trainerDetail(int id) => '/trainers/$id';
 }

@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import '../providers/auth_provider.dart';
 import 'members/members_list_screen.dart';
 import 'packages/packages_list_screen.dart';
+import 'trainers/trainers_list_screen.dart';
 import '../models/staff.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _pages = const [
     MembersListScreen(),
     PackagesListScreen(),
+    TrainersListScreen(),
     _ProfileTab(),
   ];
 
@@ -33,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Thành viên'),
           NavigationDestination(icon: Icon(Icons.card_membership_outlined), selectedIcon: Icon(Icons.card_membership), label: 'Gói tập'),
+          NavigationDestination(icon: Icon(Icons.fitness_center_outlined), selectedIcon: Icon(Icons.fitness_center), label: 'HLV'),
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Tài khoản'),
         ],
       ),
