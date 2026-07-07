@@ -12,7 +12,7 @@ class TrainerService {
       ApiConstants.trainers,
       queryParameters: {
         if (search != null && search.isNotEmpty) 'search': search,
-        if (statusFilter != null) 'status': statusFilter,
+        if (statusFilter != null && statusFilter.isNotEmpty) 'status': statusFilter,
       },
     );
     return (response.data as List)

@@ -11,7 +11,7 @@ class TrainerProvider extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
   String searchQuery = '';
-  String? statusFilter;
+  String? statusFilter; // null = tất cả, 'active', 'inactive'
 
   Future<void> fetchTrainers() async {
     isLoading = true;

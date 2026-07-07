@@ -28,10 +28,22 @@ class Trainer {
       phone: json['phone'] as String,
       email: json['email'] as String?,
       specialty: json['specialty'] as String?,
-      experienceYears: (json['experience_years'] ?? 0) as int,
+      experienceYears: json['experience_years'] as int? ?? 0,
       salary: json['salary'] != null ? (json['salary'] as num).toDouble() : null,
-      status: json['status'] as String,
+      status: json['status'] as String? ?? 'active',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'full_name': fullName,
+      'phone': phone,
+      'email': (email == null || email!.isEmpty) ? null : email,
+      'specialty': (specialty == null || specialty!.isEmpty) ? null : specialty,
+      'experience_years': experienceYears,
+      'salary': salary,
+      'status': status,
+    };
   }
 
   Map<String, dynamic> toCreateJson() {

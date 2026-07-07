@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_theme.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/trainer_provider.dart';
+import '../../models/trainer.dart';
 import '../../widgets/trainer_card.dart';
 import 'trainer_form_screen.dart';
 
@@ -62,15 +64,19 @@ class _TrainersListScreenState extends State<TrainersListScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TrainerProvider>();
+    final auth = context.watch<AuthProvider>();
+    final canManage = auth.staff?.isAdminOrManager ?? false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Huấn luyện viên')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const TrainerFormScreen()),
-        ),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canManage
+          ? FloatingActionButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TrainerFormScreen()),
+              ),
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: Column(
         children: [
           Padding(
@@ -78,7 +84,7 @@ class _TrainersListScreenState extends State<TrainersListScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Tìm theo tên',
+                hintText: 'Tìm theo tên HLV...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -118,44 +124,24 @@ class _TrainersListScreenState extends State<TrainersListScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Expanded(child: _buildBody(provider)),
+          Expanded(child: _buildBody(provider, canManage)),
         ],
       ),
     );
   }
 
-  Widget _buildBody(TrainerProvider provider) {
+  Widget _buildBody(TrainerProvider provider, bool canManage) {
     if (provider.isLoading && provider.trainers.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
     if (provider.errorMessage != null && provider.trainers.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.danger),
-              const SizedBox(height: 12),
-              Text(provider.errorMessage!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              OutlinedButton(onPressed: provider.fetchTrainers, child: const Text('Thử lại')),
-            ],
-          ),
-        ),
+      return _ErrorState(
+        message: provider.errorMessage!,
+        onRetry: () => provider.fetchTrainers(),
       );
     }
     if (provider.trainers.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.fitness_center, size: 56, color: Colors.black26),
-            SizedBox(height: 12),
-            Text('Chưa có huấn luyện viên nào', style: TextStyle(color: Colors.black54)),
-          ],
-        ),
-      );
+      return const _EmptyState();
     }
     return RefreshIndicator(
       onRefresh: provider.fetchTrainers,
@@ -167,26 +153,29 @@ class _TrainersListScreenState extends State<TrainersListScreen> {
           final trainer = provider.trainers[index];
           return TrainerCard(
             trainer: trainer,
-            onTap: () => showModalBottomSheet(
-              context: context,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-              ),
-              builder: (_) => _TrainerActions(
-                trainer: trainer,
-                onEdit: () {
-                  Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => TrainerFormScreen(trainer: trainer)),
-                  );
-                },
-                onDelete: () {
-                  Navigator.pop(context);
-                  _confirmDelete(context, trainer.id, trainer.fullName);
-                },
-              ),
-            ),
+            onTap: () {
+              if (!canManage) return;
+              showModalBottomSheet(
+                context: context,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                ),
+                builder: (_) => _TrainerActions(
+                  trainer: trainer,
+                  onEdit: () {
+                    Navigator.pop(context);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => TrainerFormScreen(trainer: trainer)),
+                    );
+                  },
+                  onDelete: () {
+                    Navigator.pop(context);
+                    _confirmDelete(context, trainer.id, trainer.fullName);
+                  },
+                ),
+              );
+            },
           );
         },
       ),
@@ -213,14 +202,57 @@ class _FilterChip extends StatelessWidget {
         fontWeight: FontWeight.w600,
         fontSize: 12.5,
       ),
-      backgroundColor: AppTheme.primary.withOpacity(0.08),
+      backgroundColor: AppTheme.primary.withValues(alpha: 0.08),
       side: BorderSide.none,
     );
   }
 }
 
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.person_search, size: 56, color: Colors.black26),
+          const SizedBox(height: 12),
+          Text('Không tìm thấy huấn luyện viên nào', style: TextStyle(color: Colors.black54)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: AppTheme.danger),
+            const SizedBox(height: 12),
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            OutlinedButton(onPressed: onRetry, child: const Text('Thử lại')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TrainerActions extends StatelessWidget {
-  final dynamic trainer;
+  final Trainer trainer;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 

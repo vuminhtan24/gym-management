@@ -35,4 +35,27 @@ class ApiConstants {
   // Trainers
   static const String trainers = '/trainers';
   static String trainerDetail(int id) => '/trainers/$id';
+  // PT Schedules
+  static const String ptSchedules = '/pt-schedules';
+  static String ptScheduleDetail(int id) => '/pt-schedules/$id';
+
+  // Group Classes & Class Schedules & Class Registrations
+  static const String classes = '/classes';
+  static String classDetail(int id) => '/classes/$id';
+  static const String classSchedules = '/classes/schedules';
+  static String classScheduleDetail(int id) => '/classes/schedules/$id';
+  static const String classRegistrations = '/classes/registrations';
+  static String classRegistrationDetail(int id) => '/classes/registrations/$id';
+
+  // Staff
+  static const String staff = '/staff';
+  static String staffDetail(int id) => '/staff/$id';
+
+  // Reports
+  static const String reportsDashboard = '/reports/dashboard';
+  static const String reportsRevenue = '/reports/revenue';
+  static const String reportsPackageSales = '/reports/package-sales';
+  static const String reportsTrainerSessions = '/reports/trainer-sessions';
+  static const String reportsClassAttendance = '/reports/class-attendance';
+  static const String reportsNewMembers = '/reports/new-members';
 }
